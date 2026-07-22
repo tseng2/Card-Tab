@@ -6,387 +6,715 @@ const HTML_CONTENT = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Tab</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>⭐</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-    /* 全局样式 */
+    :root {
+      --brand: #1e3a5f;
+      --brand-2: #2c4a6e;
+      --accent: #2563eb;
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --surface-2: #fafbfc;
+      --chrome: #0f172a;
+      --sidebar-text: #94a3b8;
+      --sidebar-border: rgba(51, 65, 85, 0.4);
+      --ink: #0f172a;
+      --ink-2: #334155;
+      --ink-3: #64748b;
+      --ink-4: #94a3b8;
+      --line: #e2e8f0;
+      --line-2: #eef2f6;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #2563eb;
+      --radius: 3px;
+      --header-h: 52px;
+      --font-sans: 'IBM Plex Sans', 'Noto Sans SC', 'PingFang SC', sans-serif;
+      --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #e8f4ea;
-        transition: background-color 0.3s ease;
+      font-family: var(--font-sans);
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink-2);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
-    
-    /* 固定元素样式 */
+
+    body.dark {
+      --bg: #0b1220;
+      --surface: #111827;
+      --surface-2: #152033;
+      --ink: #e2e8f0;
+      --ink-2: #cbd5e1;
+      --ink-3: #94a3b8;
+      --ink-4: #64748b;
+      --line: #1e293b;
+      --line-2: #172033;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-ok { background: var(--ok); }
+    .dot-warn { background: var(--warn); }
+    .dot-danger { background: var(--danger); }
+    .dot-info { background: var(--info); }
+    .dot-gray { background: var(--ink-4); }
+    .dot-pulse { position: relative; }
+    .dot-pulse::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: inherit;
+      animation: pulse 2s ease-out infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.7; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
     .fixed-elements {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: #e8f4ea;
-        z-index: 1000;
-        padding: 10px;
-        transition: background-color 0.3s ease;
-        height: 130px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: transparent;
+      padding: 0;
+      height: auto;
     }
-    
-    .fixed-elements h3 {
-        position: absolute;
-        top: 10px;
-        left: 20px;
-        margin: 0;
+
+    .topbar {
+      height: var(--header-h);
+      background: var(--chrome);
+      border-bottom: 1px solid var(--sidebar-border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
     }
-    
-    /* 中心内容样式 */
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      background: var(--brand);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .logo-text {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .logo-meta {
+      color: var(--sidebar-text);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      margin-left: 6px;
+    }
+
     .center-content {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        max-width: 600px;
-        text-align: center;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      position: static;
+      transform: none;
+      top: auto;
+      left: auto;
+      max-width: none;
+      text-align: center;
     }
-    
-    /* 管理员控制面板样式 */
+
+    #hitokoto {
+      margin: 0;
+      color: var(--sidebar-text);
+      font-size: 12px;
+      max-width: 480px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #hitokoto a {
+      color: #cbd5e1;
+      text-decoration: none;
+    }
+
     .admin-controls {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        font-size: 60%;
+      position: static;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      flex-shrink: 0;
     }
-    
-    /* 添加/删除控制按钮样式 */
+
+    .admin-controls input[type="password"] {
+      width: 120px;
+      height: 28px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(148,163,184,0.25);
+      border-radius: var(--radius);
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 0 10px;
+      outline: none;
+    }
+    .admin-controls input[type="password"]::placeholder { color: var(--ink-4); }
+    .admin-controls input[type="password"]:focus {
+      border-color: var(--accent);
+      background: rgba(37,99,235,0.08);
+    }
+
+    .admin-controls button {
+      height: 28px;
+      padding: 0 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #cbd5e1;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    #admin-mode-btn {
+      border-color: rgba(148,163,184,0.3);
+    }
+    #admin-mode-btn:hover {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+    }
+
+    #secret-garden-btn {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    #secret-garden-btn:hover { background: var(--brand-2); }
+
+    .search-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 20px 12px;
+    }
+
+    .search-container {
+      margin: 0 auto;
+      max-width: 640px;
+    }
+
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0;
+    }
+
+    .search-bar input {
+      flex: 1;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-right: none;
+      border-radius: var(--radius) 0 0 var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      outline: none;
+      width: auto;
+    }
+    .search-bar input:focus {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+    .search-bar input::placeholder { color: var(--ink-4); }
+
+    .search-bar button {
+      height: 36px;
+      padding: 0 16px;
+      border: 1px solid var(--brand);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+    }
+    .search-bar button:hover { background: var(--brand-2); }
+
+    .search-engines {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 10px;
+    }
+
+    .search-engine {
+      height: 26px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-3);
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .search-engine:hover {
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+    .search-engine.active {
+      color: var(--accent);
+      border-color: var(--line);
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .content {
+      margin-top: 0;
+      padding: 20px 24px 40px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .page-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .page-meta h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .page-meta .meta-line {
+      font-size: 12px;
+      color: var(--ink-4);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    .status-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--ink-3);
+    }
+
     .add-remove-controls {
-        display: none;
-        flex-direction: column;
-        position: fixed;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        align-items: center;
-        gap: 10px;
+      display: none;
+      flex-direction: column;
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      align-items: center;
+      gap: 6px;
+      z-index: 90;
     }
-    
+
     .round-btn {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        text-align: center;
-        font-size: 24px;
-        line-height: 40px;
-        cursor: pointer;
-        margin: 5px 0;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-2);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, color 0.12s;
     }
-    
+    .round-btn:hover {
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+    .round-btn.add-btn {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    .round-btn.add-btn:hover { background: var(--brand-2); }
     .add-btn { order: 1; }
     .remove-btn { order: 2; }
     .category-btn { order: 3; }
     .remove-category-btn { order: 4; }
-    
-    /* 主要内容区域样式 */
-    .content {
-        margin-top: 140px;
-        padding: 20px;
-    }
-    
-    /* 搜索栏样式 */
-    .search-container {
-        margin-top: 10px;
-    }
-    
-    .search-bar {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 10px;
-    }
-    
-    .search-bar input {
-        width: 70%;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 5px 0 0 5px;
-    }
-    
-    .search-bar button {
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        border-left: none;
-        background-color: #f8f8;
-        border-radius: 0 5px 5px 0;
-        cursor: pointer;
-    }
-    
-    /* 搜索引擎按钮样式 */
-    .search-engines {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
-    
-    .search-engine {
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        background-color: #f0f0f0;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    
-    /* 主题切换按钮样式 */
-    #theme-toggle {
-        position: fixed;
-        bottom: 50px;
-        right: 20px;
-        background-color: #b8c9d9;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        text-align: center;
-        font-size: 24px;
-        line-height: 40px;
-        cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        transition: background-color 0.3s ease;
-    }
 
-    #theme-toggle:hover {
-        background-color: #007bff;
-    }
+    .section { margin-bottom: 22px; }
 
-    /* 对话框样式 */
-    #dialog-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-    }
-    
-    #dialog-box {
-        background-color: white;
-        padding: 20px;
-        border-radius: 5px;
-        width: 300px;
-    }
-    
-    #dialog-box input, #dialog-box select {
-        width: 100%;
-        margin-bottom: 10px;
-        padding: 5px;
-    }
-    
-    /* 分类和卡片样式 */
-    .section {
-        margin-bottom: 20px;
-    }
-    
     .section-title-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 0 2px 8px;
+      border-bottom: 1px solid var(--line);
     }
-    
+
     .section-title {
-        font-size: 18px;
-        font-weight: bold;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-2);
+      letter-spacing: 0.03em;
+      text-transform: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    
+
+    .section-count {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--ink-4);
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
     .delete-category-btn {
-        background-color: #ff9800;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 5px;
-        cursor: pointer;
+      background: transparent;
+      color: var(--warn);
+      border: 1px solid var(--line);
+      padding: 3px 8px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      font-weight: 500;
     }
-    
+    .delete-category-btn:hover {
+      background: rgba(217, 119, 6, 0.08);
+    }
+
     .card-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      gap: 8px;
     }
-    
+
     .card {
-        background-color: #b8c9d9;
-        border-radius: 5px;
-        padding: 10px;
-        width: 150px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-        transition: transform 0.2s;
-        position: relative;
-        user-select: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      width: auto;
+      min-width: 0;
+      min-height: 72px;
+      box-shadow: none;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      position: relative;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--ink-2);
     }
-    
+
     .card:hover {
-        transform: translateY(-5px);
+      transform: none;
+      background: var(--surface-2);
+      border-color: #cbd5e1;
     }
-    
+
+    body.dark .card:hover { border-color: #334155; }
+
+    .card.dragging {
+      opacity: 0.75;
+      border-color: var(--accent);
+    }
+
     .card-top {
-        display: flex;
-        align-items: center;
-        margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 0;
+      min-width: 0;
     }
-    
+
     .card-icon {
-        width: 16px;
-        height: 16px;
-        margin-right: 5px;
+      width: 18px;
+      height: 18px;
+      margin-right: 0;
+      border-radius: 2px;
+      flex-shrink: 0;
+      object-fit: contain;
     }
-    
+
     .card-title {
-        font-size: 14px;
-        font-weight: bold;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
-    
+
     .card-url {
-        font-size: 12px;
-        color: #666;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      font-size: 11px;
+      color: var(--ink-4);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .private-tag {
-        background-color: #ff9800;
-        color: white;
-        font-size: 10px;
-        padding: 2px 5px;
-        border-radius: 3px;
-        position: absolute;
-        top: 5px;
-        right: 5px;
+      background: transparent;
+      color: var(--warn);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 0;
+      border-radius: 0;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: 0.02em;
     }
-    
+
+    .private-tag .dot { width: 5px; height: 5px; }
+
     .delete-btn {
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        background-color: red;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        text-align: center;
-        font-size: 14px;
-        line-height: 20px;
-        cursor: pointer;
-        display: none;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      width: 18px;
+      height: 18px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 18px;
+      cursor: pointer;
+      display: none;
+      padding: 0;
     }
-    
-    /* 版权信息样式 */
-    #copyright {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 40px;
-        background-color: rgba(255, 255, 255, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 14px;
-        z-index: 1000;
-        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+
+    #theme-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface);
+      color: var(--ink-3);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      width: 36px;
+      height: 36px;
+      text-align: center;
+      font-size: 16px;
+      line-height: 34px;
+      cursor: pointer;
+      box-shadow: none;
+      transition: background 0.12s, color 0.12s;
+      z-index: 90;
     }
-    
-    #copyright p {
-        margin: 0;
+    #theme-toggle:hover {
+      background: var(--surface-2);
+      color: var(--ink);
     }
-    
-    #copyright a {
-        color: #007bff;
-        text-decoration: none;
+
+    #dialog-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.45);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
     }
-    
-    #copyright a:hover {
-        text-decoration: underline;
+
+    #dialog-box {
+      background: var(--surface);
+      color: var(--ink-2);
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      width: 320px;
+      box-shadow: none;
     }
-    
-    /* 响应式设计 */
+
+    #dialog-box label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-3);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    #dialog-box input,
+    #dialog-box select {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      outline: none;
+    }
+    #dialog-box input:focus,
+    #dialog-box select:focus {
+      border-color: var(--accent);
+    }
+
+    .private-link-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .private-link-container label {
+      margin: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-2);
+    }
+    .private-link-container input {
+      width: auto;
+      margin: 0;
+    }
+
+    #dialog-box button {
+      height: 30px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-right: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-2);
+    }
+    #dialog-box button:first-of-type {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    #dialog-box button:first-of-type:hover { background: var(--brand-2); }
+    #dialog-box button:last-of-type:hover {
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+
+
+    @media (max-width: 768px) {
+      .topbar { padding: 0 12px; gap: 8px; }
+      .logo-meta, .center-content { display: none; }
+      .admin-controls input[type="password"] { width: 96px; }
+      .content { padding: 16px 12px 40px; }
+      .add-remove-controls { right: 8px; }
+      .card-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .card { min-height: 64px; padding: 10px; }
+      .card-title { font-size: 12px; }
+      .card-url { font-size: 10px; }
+      #theme-toggle, .round-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+      }
+      #theme-toggle { right: 10px; bottom: 16px; }
+    }
+
     @media (max-width: 480px) {
-        .fixed-elements {
-            position: relative;
-            padding: 5px;
-        }
-        .content {
-            margin-top: 10px;
-        }
-
-        .admin-controls input,
-        .admin-controls button {
-            height: 30%;
-        }
-
-        .card-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        .card {
-            width: 80%;
-            max-width: 100%;
-            padding: 5px;
-        }
-        .card-title {
-            font-size: 12px;
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            max-width: 130px; 
-        }
-        .card-url {
-            font-size: 10px;
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            max-width: 130px;
-        }
-        
-        .add-remove-controls {
-            right: 2px;
-          }
-
-        .round-btn, 
-        #theme-toggle {
-            right: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px;
-            height: 30px;
-            font-size: 24px;
-        }
+      .fixed-elements { position: sticky; }
+      .content { margin-top: 0; }
     }
     </style>
 </head>
 
 <body>
     <div class="fixed-elements">
-        <h3>我的导航</h3>
-        <div class="center-content">
-            <!-- 一言模块 -->
-            <p id="hitokoto">
-                <a href="#" id="hitokoto_text"></a>
-            </p>
-            <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script>
-            <!-- 搜索栏 -->
+        <div class="topbar">
+            <div class="logo">
+                <div class="logo-mark">CT</div>
+                <h3 class="logo-text">Card Tab<span class="logo-meta">NAV / 01</span></h3>
+            </div>
+            <div class="center-content">
+                <p id="hitokoto">
+                    <a href="#" id="hitokoto_text"></a>
+                </p>
+                <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script>
+            </div>
+            <div class="admin-controls">
+                <input type="password" id="admin-password" placeholder="ADMIN KEY">
+                <button id="admin-mode-btn" onclick="toggleAdminMode()">设置</button>
+                <button id="secret-garden-btn" onclick="toggleSecretGarden()">登录</button>
+            </div>
+        </div>
+        <div class="search-strip">
             <div class="search-container">
                 <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="">
-                    <button id="search-button">🔍</button>
+                    <input type="text" id="search-input" placeholder="搜索网页、书签或分类…">
+                    <button id="search-button">搜索</button>
                 </div>
                 <div class="search-engines">
                     <button class="search-engine" data-engine="baidu">百度</button>
@@ -395,28 +723,28 @@ const HTML_CONTENT = `
                 </div>
             </div>
         </div>
-        <!-- 管理员控制面板 -->
-        <div class="admin-controls">
-            <input type="password" id="admin-password" placeholder="输入密码">
-            <button id="admin-mode-btn" onclick="toggleAdminMode()">设  置</button>
-            <button id="secret-garden-btn" onclick="toggleSecretGarden()">登  录</button>
-        </div>
     </div>
+
     <div class="content">
-        <!-- 添加/删除控制按钮 -->
+        <div class="page-meta">
+            <div>
+                <h1>我的导航</h1>
+                <div class="meta-line">BOOKMARK WORKSPACE · CLOUDFLARE WORKER</div>
+            </div>
+            <span class="status-inline"><span class="dot dot-ok dot-pulse"></span>ONLINE</span>
+        </div>
+
         <div class="add-remove-controls">
             <button class="round-btn add-btn" onclick="showAddDialog()">+</button>
-            <button class="round-btn remove-btn" onclick="toggleRemoveMode()">-</button>
+            <button class="round-btn remove-btn" onclick="toggleRemoveMode()">−</button>
             <button class="round-btn category-btn" onclick="addCategory()">C+</button>
-            <button class="round-btn remove-category-btn" onclick="toggleRemoveCategory()">C-</button>
-
+            <button class="round-btn remove-category-btn" onclick="toggleRemoveCategory()">C−</button>
         </div>
 
-        <!-- 分类和卡片容器 -->
         <div id="sections-container"></div>
-        <!-- 主题切换按钮 -->
-        <button id="theme-toggle" onclick="toggleTheme()">◑</button>
-        <!-- 添加链接对话框 -->
+
+        <button id="theme-toggle" onclick="toggleTheme()" title="切换主题">◑</button>
+
         <div id="dialog-overlay">
             <div id="dialog-box">
                 <label for="name-input">名称</label>
@@ -426,21 +754,18 @@ const HTML_CONTENT = `
                 <label for="category-select">选择分类</label>
                 <select id="category-select"></select>
                 <div class="private-link-container">
-                    <label for="private-checkbox">私密链接</label>    
+                    <label for="private-checkbox">私密链接</label>
                     <input type="checkbox" id="private-checkbox">
                 </div>
                 <button onclick="addLink()">确定</button>
                 <button onclick="hideAddDialog()">取消</button>
             </div>
         </div>
-        <!-- 版权信息 -->
-        <div id="copyright" class="copyright">
-            <!--请不要删除-->
-            <p>项目地址：<a href="https://github.com/hmhm2022/Card-Tab" target="_blank">GitHub</a> 如果喜欢，烦请点个star！</p>
-        </div>
+
     </div>
 
     <script>
+
     // 搜索引擎配置
     const searchEngines = {
         baidu: "https://www.baidu.com/s?wd=",
@@ -461,7 +786,7 @@ const HTML_CONTENT = `
     function setActiveEngine(engine) {
         currentEngine = engine;
         document.querySelectorAll('.search-engine').forEach(btn => {
-            btn.style.backgroundColor = btn.dataset.engine === engine ? '#c0c0c0' : '#f0f0f0';
+            btn.classList.toggle('active', btn.dataset.engine === engine);
         });
         logAction('设置搜索引擎', { engine });
     }
@@ -550,7 +875,8 @@ const HTML_CONTENT = `
     
             const title = document.createElement('div');
             title.className = 'section-title';
-            title.textContent = category;
+            const categoryLinks = links.filter(link => link.category === category);
+            title.innerHTML = category + '<span class="section-count">' + String(categoryLinks.length).padStart(2, '0') + '</span>';
     
             titleContainer.appendChild(title);
     
@@ -572,7 +898,6 @@ const HTML_CONTENT = `
     
             container.appendChild(section);
     
-            const categoryLinks = links.filter(link => link.category === category);
             categoryLinks.forEach(link => {
                 createCard(link, cardContainer);
             });
@@ -644,7 +969,7 @@ const HTML_CONTENT = `
         secretGardenBtn.style.display = 'inline-block';
     
         if (isAdmin) {
-            adminBtn.textContent = "离开设置";
+            adminBtn.textContent = "退出设置";
             adminBtn.style.display = 'inline-block';
             addRemoveControls.style.display = 'flex';
         } else if (isLoggedIn) {
@@ -686,7 +1011,6 @@ const HTML_CONTENT = `
     
             const title = document.createElement('div');
             title.className = 'section-title';
-            title.textContent = category;
     
             titleContainer.appendChild(title);
     
@@ -716,6 +1040,8 @@ const HTML_CONTENT = `
                     createCard(link, cardContainer);
                 }
             });
+    
+            title.innerHTML = category + '<span class="section-count">' + String(linkCount).padStart(2, '0') + '</span>';
     
             if (privateCount < linkCount || isLoggedIn) {
                 container.appendChild(section);
@@ -784,7 +1110,7 @@ const HTML_CONTENT = `
         if (link.isPrivate) {
             const privateTag = document.createElement('div');
             privateTag.className = 'private-tag';
-            privateTag.textContent = '私密';
+            privateTag.innerHTML = '<span class="dot dot-warn"></span>PRIVATE';
             card.appendChild(privateTag);
         }
     
@@ -824,17 +1150,11 @@ const HTML_CONTENT = `
         // logAction('创建卡片', { name: link.name, isPrivate: link.isPrivate });
     }
     
-    // 更新卡片样式
+    // 更新卡片样式（Industrial Control Room：交由 CSS 变量控制）
     function updateCardStyle(card) {
-        if (isDarkTheme) {
-            card.style.backgroundColor = '#1e1e1e';
-            card.style.color = '#ffffff';
-            card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
-        } else {
-            card.style.backgroundColor = '#b8c9d9';
-            card.style.color = '#333';
-            card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-        }
+        card.style.backgroundColor = '';
+        card.style.color = '';
+        card.style.boxShadow = '';
     }
     
     // 更新分类选择下拉框
@@ -1260,7 +1580,7 @@ const HTML_CONTENT = `
         } else if (isAdmin) {
             isAdmin = false;
             removeMode = false;
-            adminBtn.textContent = "设  置";
+            adminBtn.textContent = "设置";
             addRemoveControls.style.display = 'none';
             alert('设置已保存');
             reloadCardsAsAdmin();
@@ -1308,14 +1628,8 @@ const HTML_CONTENT = `
     
     // 应用暗色主题
     function applyDarkTheme() {
-        document.body.style.backgroundColor = '#121212';
-        document.body.style.color = '#ffffff';
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.style.backgroundColor = '#1e1e1e';
-            card.style.color = '#ffffff';
-            card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
-        });
+        document.body.classList.add('dark');
+        isDarkTheme = true;
         logAction('应用暗色主题');
     }
     
@@ -1354,36 +1668,7 @@ const HTML_CONTENT = `
     // 切换主题
     function toggleTheme() {
         isDarkTheme = !isDarkTheme;
-    
-        document.body.style.backgroundColor = isDarkTheme ? '#121212' : '#e8f4ea';
-        document.body.style.color = isDarkTheme ? '#ffffff' : '#333';
-    
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.style.backgroundColor = isDarkTheme ? '#1e1e1e' : '#b8c9d9';
-            card.style.color = isDarkTheme ? '#ffffff' : '#333';
-            card.style.boxShadow = isDarkTheme
-                ? '0 4px 8px rgba(0, 0, 0, 0.5)'
-                : '0 4px 8px rgba(0, 0, 0, 0.1)';
-        });
-    
-        const fixedElements = document.querySelectorAll('.fixed-elements');
-        fixedElements.forEach(element => {
-            element.style.backgroundColor = isDarkTheme ? '#121212' : '#e8f4ea';
-            element.style.color = isDarkTheme ? '#ffffff' : '#333';
-        });
-    
-        const dialogBox = document.getElementById('dialog-box');
-        dialogBox.style.backgroundColor = isDarkTheme ? '#1e1e1e' : '#ffffff';
-        dialogBox.style.color = isDarkTheme ? '#ffffff' : '#333';
-    
-        const inputs = document.querySelectorAll('input[type="text"], input[type="password"], select');
-        inputs.forEach(input => {
-            input.style.backgroundColor = isDarkTheme ? '#444' : '#fff';
-            input.style.color = isDarkTheme ? '#fff' : '#333';
-            input.style.borderColor = isDarkTheme ? '#555' : '#ccc';
-        });
-        
+        document.body.classList.toggle('dark', isDarkTheme);
         logAction('切换主题', { isDarkTheme });
     }
     
