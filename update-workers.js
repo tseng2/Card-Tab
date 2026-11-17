@@ -7,7 +7,9 @@ const HTML_CONTENT = `
     <title>Card Tab</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>⭐</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
     <style>
     :root {
       --brand: #1e3a5f;
@@ -530,7 +532,7 @@ const HTML_CONTENT = `
     .delete-btn {
       position: absolute;
       top: -8px;
-      right: -8px;
+      right: 14px;
       background: var(--danger);
       color: #fff;
       border: none;
@@ -544,6 +546,24 @@ const HTML_CONTENT = `
       display: none;
       padding: 0;
     }
+
+    .edit-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      width: 18px;
+      height: 18px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 18px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .edit-btn:hover { background: var(--brand-2); }
 
     #theme-toggle {
       position: fixed;
@@ -591,6 +611,13 @@ const HTML_CONTENT = `
       box-shadow: none;
     }
 
+    #dialog-title {
+      margin: 0 0 16px;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+    }
+
     #dialog-box label {
       display: block;
       font-size: 11px;
@@ -625,7 +652,8 @@ const HTML_CONTENT = `
       gap: 8px;
       margin-bottom: 14px;
     }
-    .private-link-container label {
+    #dialog-box .private-link-container label {
+      flex-shrink: 0;
       margin: 0;
       text-transform: none;
       letter-spacing: 0;
@@ -633,9 +661,13 @@ const HTML_CONTENT = `
       font-weight: 500;
       color: var(--ink-2);
     }
-    .private-link-container input {
-      width: auto;
+    #dialog-box .private-link-container input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
       margin: 0;
+      padding: 0;
+      accent-color: var(--brand);
     }
 
     #dialog-box button {
@@ -702,7 +734,7 @@ const HTML_CONTENT = `
                 <p id="hitokoto">
                     <a href="#" id="hitokoto_text"></a>
                 </p>
-                <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script>
+                <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" async></script>
             </div>
             <div class="admin-controls">
                 <input type="password" id="admin-password" placeholder="ADMIN KEY">
@@ -747,6 +779,7 @@ const HTML_CONTENT = `
 
         <div id="dialog-overlay">
             <div id="dialog-box">
+                <h2 id="dialog-title">添加卡片</h2>
                 <label for="name-input">名称</label>
                 <input type="text" id="name-input">
                 <label for="url-input">地址</label>
@@ -757,7 +790,7 @@ const HTML_CONTENT = `
                     <label for="private-checkbox">私密链接</label>
                     <input type="checkbox" id="private-checkbox">
                 </div>
-                <button onclick="addLink()">确定</button>
+                <button id="dialog-submit" onclick="addLink()">确定</button>
                 <button onclick="hideAddDialog()">取消</button>
             </div>
         </div>
@@ -824,6 +857,7 @@ const HTML_CONTENT = `
     let isRemoveCategoryMode = false;
     let isDarkTheme = false;
     let links = [];
+    let editingLink = null;
     const categories = {};
     
     // 添加新分类
@@ -924,6 +958,11 @@ const HTML_CONTENT = `
             const response = await fetch('/api/getLinks?userId=testUser', {
                 headers: headers
             });
+
+            if (response.status === 401) {
+                await resetToLoginState('登录已过期，请重新登录');
+                return loadLinks();
+            }
             
             if (!response.ok) {
                 throw new Error("HTTP error! status: " + response.status);
@@ -1070,6 +1109,8 @@ const HTML_CONTENT = `
         // 创建图标元素
         const icon = document.createElement('img');
         icon.className = 'card-icon';
+        icon.loading = 'lazy';
+        icon.decoding = 'async';
         // icon.src = 'https://api.iowen.cn/favicon/' + extractDomain(link.url) + '.png';
         icon.src = 'https://www.faviconextractor.com/favicon/' + extractDomain(link.url);
         icon.alt = 'Website Icon';
@@ -1123,6 +1164,19 @@ const HTML_CONTENT = `
             });
         }
     
+        if (isAdmin) {
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✎';
+            editBtn.className = 'edit-btn';
+            editBtn.title = '编辑卡片';
+            editBtn.setAttribute('aria-label', '编辑 ' + link.name);
+            editBtn.onclick = function (event) {
+                event.stopPropagation();
+                showEditDialog(link);
+            };
+            card.appendChild(editBtn);
+        }
+
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '–';
         deleteBtn.className = 'delete-btn';
@@ -1173,15 +1227,13 @@ const HTML_CONTENT = `
     }
     
     // 保存链接数据
-    async function saveLinks() {
+    async function saveLinks(allLinks = [...publicLinks, ...privateLinks], categoriesToSave = categories) {
         if (isAdmin && !(await validateToken())) {
-            return;
+            return false;
         }
-
-        let allLinks = [...publicLinks, ...privateLinks];
     
         try {
-            await fetch('/api/saveOrder', {
+            const response = await fetch('/api/saveOrder', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -1190,56 +1242,116 @@ const HTML_CONTENT = `
                 body: JSON.stringify({ 
                     userId: 'testUser', 
                     links: allLinks,
-                    categories: categories
+                    categories: categoriesToSave
                 }),
             });
-            logAction('保存链接', { linkCount: allLinks.length, categoryCount: Object.keys(categories).length });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Failed to save links');
+            }
+            logAction('保存链接', { linkCount: allLinks.length, categoryCount: Object.keys(categoriesToSave).length });
+            return true;
         } catch (error) {
             logAction('保存链接失败', { error: error.message });
             alert('保存链接失败，请重试');
+            return false;
         }
     }
     
-    // 添加卡片弹窗
+    // 保存新增或编辑的卡片
     async function addLink() {
         if (!await validateToken()) {
             return; 
         }
-        const name = document.getElementById('name-input').value;
-        const url = document.getElementById('url-input').value;
+        const name = document.getElementById('name-input').value.trim();
+        const url = document.getElementById('url-input').value.trim();
         const category = document.getElementById('category-select').value;
         const isPrivate = document.getElementById('private-checkbox').checked;
-    
-        if (name && url && category) {
-            const newLink = { name, url, category, isPrivate };
-    
-            if (isPrivate) {
-                privateLinks.push(newLink);
-            } else {
-                publicLinks.push(newLink);
-            }
-    
-            links = isLoggedIn ? [...publicLinks, ...privateLinks] : publicLinks;
-    
-            if (isAdmin || (isPrivate && isLoggedIn) || !isPrivate) {
-                const container = document.getElementById(category);
-                if (container) {
-                    createCard(newLink, container);
-                } else {
-                    categories[category] = [];
-                    renderCategories();
-                }
-            }
-    
-            saveLinks();
-    
-            document.getElementById('name-input').value = '';
-            document.getElementById('url-input').value = '';
-            document.getElementById('private-checkbox').checked = false;
-            hideAddDialog();
 
-            logAction('添加卡片', { name, url, category, isPrivate });
+        if (!name || !url || !category) {
+            alert('请填写名称、地址并选择分类');
+            return;
         }
+
+        if (editingLink) {
+            const originalLink = editingLink;
+            const original = { ...originalLink };
+            const findOriginalIndex = linkArray => {
+                const referenceIndex = linkArray.indexOf(originalLink);
+                if (referenceIndex !== -1) {
+                    return referenceIndex;
+                }
+                // 拖拽排序会重建数据数组，必要时按原值找回对应卡片
+                return linkArray.findIndex(link =>
+                    link.name === original.name &&
+                    link.url === original.url &&
+                    link.isPrivate === original.isPrivate
+                );
+            };
+
+            const publicIndex = findOriginalIndex(publicLinks);
+            const privateIndex = findOriginalIndex(privateLinks);
+            if (publicIndex === -1 && privateIndex === -1) {
+                alert('原卡片数据已变化，请刷新页面后再编辑');
+                return;
+            }
+
+            const updatedLink = { ...originalLink, name, url, category, isPrivate };
+            const nextPublicLinks = publicLinks.filter((link, index) => index !== publicIndex);
+            const nextPrivateLinks = privateLinks.filter((link, index) => index !== privateIndex);
+            const targetLinks = isPrivate ? nextPrivateLinks : nextPublicLinks;
+            const originalIndex = isPrivate ? privateIndex : publicIndex;
+            const insertionIndex = originalIndex === -1
+                ? targetLinks.length
+                : Math.min(originalIndex, targetLinks.length);
+            targetLinks.splice(insertionIndex, 0, updatedLink);
+
+            const allLinks = [...nextPublicLinks, ...nextPrivateLinks];
+            const nextCategories = {};
+            Object.keys(categories).forEach(categoryName => {
+                nextCategories[categoryName] = allLinks.filter(link => link.category === categoryName);
+            });
+
+            if (!await saveLinks(allLinks, nextCategories)) {
+                return;
+            }
+
+            publicLinks = nextPublicLinks;
+            privateLinks = nextPrivateLinks;
+            Object.keys(categories).forEach(categoryName => delete categories[categoryName]);
+            Object.assign(categories, nextCategories);
+            links = isLoggedIn ? [...publicLinks, ...privateLinks] : publicLinks;
+
+            loadSections();
+            updateCategorySelect();
+            hideAddDialog();
+            logAction('编辑卡片', { originalUrl: original.url, name, url, category, isPrivate });
+            return;
+        }
+
+        const newLink = { name, url, category, isPrivate };
+
+        if (isPrivate) {
+            privateLinks.push(newLink);
+        } else {
+            publicLinks.push(newLink);
+        }
+
+        links = isLoggedIn ? [...publicLinks, ...privateLinks] : publicLinks;
+
+        if (isAdmin || (isPrivate && isLoggedIn) || !isPrivate) {
+            const container = document.getElementById(category);
+            if (container) {
+                createCard(newLink, container);
+            } else {
+                categories[category] = [];
+                renderCategories();
+            }
+        }
+
+        saveLinks();
+        hideAddDialog();
+        logAction('添加卡片', { name, url, category, isPrivate });
     }
 
     // 删除卡片
@@ -1275,7 +1387,7 @@ const HTML_CONTENT = `
     
     // 触屏端拖拽卡片
     function touchStart(event) {
-        if (!isAdmin) {
+        if (!isAdmin || event.target.closest('button')) {
             return;
         }
         draggedCard = event.target.closest('.card');
@@ -1346,6 +1458,10 @@ const HTML_CONTENT = `
     // PC端拖拽卡片
     function dragStart(event) {
         if (!isAdmin) {
+            event.preventDefault();
+            return;
+        }
+        if (event.target.closest('button')) {
             event.preventDefault();
             return;
         }
@@ -1633,16 +1749,52 @@ const HTML_CONTENT = `
         logAction('应用暗色主题');
     }
     
+    // 重置卡片对话框
+    function resetLinkDialog() {
+        editingLink = null;
+        document.getElementById('dialog-title').textContent = '添加卡片';
+        document.getElementById('dialog-submit').textContent = '确定';
+        document.getElementById('name-input').value = '';
+        document.getElementById('url-input').value = '';
+        document.getElementById('private-checkbox').checked = false;
+        const categorySelect = document.getElementById('category-select');
+        categorySelect.selectedIndex = categorySelect.options.length ? 0 : -1;
+    }
+
     // 显示添加链接对话框
     function showAddDialog() {
+        resetLinkDialog();
+        updateCategorySelect();
         document.getElementById('dialog-overlay').style.display = 'flex';
+        document.getElementById('name-input').focus();
         logAction('显示添加链接对话框');
     }
+
+    // 显示编辑链接对话框
+    async function showEditDialog(link) {
+        if (!isAdmin || !await validateToken()) {
+            return;
+        }
+
+        resetLinkDialog();
+        editingLink = link;
+        updateCategorySelect();
+        document.getElementById('dialog-title').textContent = '编辑卡片';
+        document.getElementById('dialog-submit').textContent = '保存';
+        document.getElementById('name-input').value = link.name;
+        document.getElementById('url-input').value = link.url;
+        document.getElementById('category-select').value = link.category;
+        document.getElementById('private-checkbox').checked = link.isPrivate;
+        document.getElementById('dialog-overlay').style.display = 'flex';
+        document.getElementById('name-input').focus();
+        logAction('显示编辑链接对话框', { name: link.name, url: link.url });
+    }
     
-    // 隐藏添加链接对话框
+    // 隐藏卡片对话框
     function hideAddDialog() {
         document.getElementById('dialog-overlay').style.display = 'none';
-        logAction('隐藏添加链接对话框');
+        resetLinkDialog();
+        logAction('隐藏卡片对话框');
     }
     
     // 切换删除卡片模式
@@ -1683,11 +1835,11 @@ const HTML_CONTENT = `
         return result;
     }
     
-    // 初始化加载
-    document.addEventListener('DOMContentLoaded', async () => {
-        await validateToken(); 
-        loadLinks(); 
-    });
+    // 脚本位于页面底部，立即初始化，避免等待第三方资源
+    // getLinks 会同时验证 token，无需在初始化时重复请求两次
+    isLoggedIn = !!localStorage.getItem('authToken');
+    updateUIState();
+    loadLinks();
 
 
     // 前端检查是否有 token
@@ -1729,6 +1881,7 @@ const HTML_CONTENT = `
         isAdmin = false;
         removeMode = false;
         isRemoveCategoryMode = false;
+        editingLink = null;
         
         const passwordInput = document.getElementById('admin-password');
         if (passwordInput) {
